@@ -1,0 +1,6 @@
+Texture.create("PIDLocation")
+      .texture("jsblock:textures/lirr_lcd_template.png")
+      .size(WIDTH, ROW_HEIGHT - 3)
+      .pos(0, ROW_HEIGHT * 3 + 3)
+      .color(0xFFFFFF)
+      .draw(ctx);

@@ -1,0 +1,29 @@
+{
+  "pids_images": [
+    {
+      "id": "pids_njtransit",
+      "name": "[NJT] NJ Transit Style",
+      "scriptFiles": ["jsblock:scripts/pids_njtransit.js"]
+    },
+    {
+      "id": "pids_njt_station",
+      "name": "[NJT] NJ Transit STATION",
+      "scriptFiles": ["jsblock:scripts/pids_njt_station.js"]
+    },
+    {
+      "id": "pids_njt_logo_a",
+      "name": "[NJT] NJ Transit Logo A",
+      "scriptFiles": ["jsblock:scripts/pids_njt_logo_a.js"]
+    },
+    {
+      "id": "pids_njt_logo_b",
+      "name": "[NJT] NJ Transit Logo B",
+      "scriptFiles": ["jsblock:scripts/pids_njt_logo_b.js"]
+    },
+    {
+      "id": "pids_lirr_lcd_a",
+      "name": "[LIRR] LIRR LCD A",
+      "scriptFiles": ["jsblock:scripts/pids_lirr_lcd_a.js"]
+    }
+  ]
+}
