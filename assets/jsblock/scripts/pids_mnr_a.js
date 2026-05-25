@@ -1,10 +1,16 @@
 include(Resources.id("jsblock:scripts/pids_util.js"));
 
 const MAX_ROWS = 4;
-const HEADER_H = 11;
+const HEADER_H = 13;
 const ROW_H = 11;
 const START_Y = 14;
-const PID_ID = "MNR-LIRR-A";
+const PID_ID = "MNR-A";
+const FONT_REG = "jsblock:font/mnr_font_reg.ttf";
+const FONT_BOLD = "jsblock:font/mnr_font_bold.ttf";
+const TRACK_X = 3;
+const TRACK_W = 22;
+const BAR_X = 26;
+const STATUS_W = 28;
 
 function create(ctx, state, pids) {}
 
@@ -12,7 +18,7 @@ function render(ctx, state, pids) {
   let nowMs = Date.now();
 
   Texture.create("BG")
-    .texture("jsblock:textures/lirr_lcd_bg_head.png")
+    .texture("jsblock:textures/mnr_bg.png")
     .size(pids.width, pids.height)
     .draw(ctx);
 
@@ -29,6 +35,7 @@ function render(ctx, state, pids) {
 
   for (let i = 0; i < MAX_ROWS; i++) {
     let rowY = START_Y + i * ROW_H;
+    let barW = pids.width - BAR_X - STATUS_W - 3;
 
     Texture.create("Divider_" + i)
       .texture("jsblock:textures/gray.png")
@@ -57,58 +64,82 @@ function render(ctx, state, pids) {
 
     let track = arrival.platformName() ? arrival.platformName() : "";
     let isFocus = i === focusIndex;
+    let timeDestColor = isFocus ? 0xFFFFFF : 0x000000;
+    let statusColor = 0xFFFFFF;
 
     if (isFocus) {
-      Texture.create("Focus_" + i)
-        .texture("jsblock:textures/lirr_lcd_template.png")
-        .pos(27, rowY + 1)
-        .size(pids.width - 54, ROW_H - 3)
+      Texture.create("FocusBase_" + i)
+        .texture("jsblock:textures/black.png")
+        .pos(BAR_X, rowY + 1)
+        .size(barW, ROW_H - 3)
         .color(arrival.routeColor())
+        .draw(ctx);
+      Texture.create("Chevron_" + i)
+        .texture("jsblock:textures/mnr_chevron.png")
+        .pos(BAR_X, rowY + 1)
+        .size(barW, ROW_H - 3)
+        .draw(ctx);
+    } else {
+      Texture.create("Base_" + i)
+        .texture("jsblock:textures/black.png")
+        .pos(BAR_X, rowY + 1)
+        .size(barW, ROW_H - 3)
+        .color(0xFFFFFF)
+        .draw(ctx);
+      Texture.create("Chevron_" + i)
+        .texture("jsblock:textures/mnr_chevron.png")
+        .pos(BAR_X, rowY + 1)
+        .size(barW, ROW_H - 3)
+        .color(0x000000)
         .draw(ctx);
     }
 
+    Text.create("Track_" + i)
+      .text(track)
+      .color(0xFFFFFF)
+      .pos(TRACK_X, rowY + 2)
+      .size(TRACK_W, 7)
+      .leftAlign()
+      .scaleXY()
+      .scale(1.0)
+      .bold(true)
+      .font(FONT_BOLD)
+      .draw(ctx);
+
     Text.create("Time_" + i)
       .text(depStr)
-      .color(0xFFFFFF)
-      .pos(3, rowY + 2)
+      .color(timeDestColor)
+      .pos(BAR_X + 4, rowY + 2)
       .size(23, 7)
       .leftAlign()
       .scaleXY()
       .scale(1.0)
       .bold(true)
+      .font(FONT_BOLD)
       .draw(ctx);
 
     Text.create("Dest_" + i)
       .text(arrival.destination())
-      .color(0xFFFFFF)
-      .pos(30, rowY + 2)
-      .size(pids.width - 72, 7)
+      .color(timeDestColor)
+      .pos(BAR_X + 28, rowY + 2)
+      .size(barW - 31, 7)
       .leftAlign()
       .scaleXY()
       .scale(1.0)
       .bold(true)
+      .font(FONT_BOLD)
       .draw(ctx);
 
     Text.create("Status_" + i)
       .text(status)
-      .color(0xFFFFFF)
-      .pos(pids.width - 29, rowY + 2)
-      .size(20, 7)
+      .color(statusColor)
+      .pos(pids.width - 3, rowY + 2)
+      .size(STATUS_W - 1, 7)
       .rightAlign()
       .scaleXY()
       .scale(1.0)
       .bold(false)
-      .draw(ctx);
-
-    Text.create("Track_" + i)
-      .text(track)
-      .color(0xFFFFFF)
-      .pos(pids.width - 5, rowY + 2)
-      .size(6, 7)
-      .rightAlign()
-      .scaleXY()
-      .scale(1.0)
-      .bold(true)
+      .font(FONT_REG)
       .draw(ctx);
 
     if (isFocus) {
@@ -131,6 +162,7 @@ function render(ctx, state, pids) {
           .scaleXY()
           .scale(0.85)
           .bold(false)
+          .font(FONT_REG)
           .draw(ctx);
       }
     }
@@ -145,6 +177,7 @@ function render(ctx, state, pids) {
     .scaleXY()
     .scale(0.8)
     .bold(true)
+    .font(FONT_BOLD)
     .draw(ctx);
 }
 
