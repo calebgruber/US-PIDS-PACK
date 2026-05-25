@@ -1,14 +1,18 @@
 include(Resources.id("jsblock:scripts/pids_util.js"));
 
-const PID_ID = "MNR-A";
-const BAR_X = 18;
+const BAR_X = 22;
 const STATUS_W = 28;
 const HEADER_Y = 2;
-const TOP_ROW_Y = 12;
-const BOTTOM_ROW_Y = 34;
-const ROW_H = 10;
+const TOP_ROW_Y = 20;
+const BOTTOM_ROW_Y = 45;
+const ROW_H = 12;
 const STOPS_Y = 24;
 const SCROLL_STEP_MS = 220;
+
+const WIDTH = 186;
+const HEIGHT = 60;
+const ROW_HEIGHT = 15;
+const PID_ID = "MNR-LCD-A";
 
 function create(ctx, state, pids) {}
 
@@ -27,7 +31,7 @@ function render(ctx, state, pids) {
     .text("TRACK")
     .color(0xCFCFCF)
     .pos(9, HEADER_Y)
-    .size(14, 6)
+    .size(WIDTH - 8, 22)
     .centerAlign()
     .scaleXY()
     .scale(0.55)
@@ -37,7 +41,7 @@ function render(ctx, state, pids) {
     .text("DEPARTING TRAIN")
     .color(0xCFCFCF)
     .pos(BAR_X + barW / 2, HEADER_Y)
-    .size(barW, 6)
+    .size(WIDTH - 8, 50)
     .centerAlign()
     .scaleXY()
     .scale(0.55)
@@ -47,7 +51,7 @@ function render(ctx, state, pids) {
     .text("STATUS")
     .color(0xCFCFCF)
     .pos(pids.width - 4, HEADER_Y)
-    .size(STATUS_W - 2, 6)
+    .size(WIDTH - 8, 50)
     .rightAlign()
     .scaleXY()
     .scale(0.55)
@@ -64,7 +68,7 @@ function render(ctx, state, pids) {
     Texture.create("Chevron_" + i)
       .texture("jsblock:textures/mnr_chevron.png")
       .pos(BAR_X, rowY)
-      .size(barW, ROW_H)
+      .size(125, ROW_H)
       .color(chevronColor)
       .draw(ctx);
 
@@ -95,8 +99,8 @@ function render(ctx, state, pids) {
     Text.create("Track_" + i)
       .text(track)
       .color(0xFFFFFF)
-      .pos(9, centerY)
-      .size(14, 5)
+      .pos(BAR_X - 12, centerY)
+      .size(22, 25)
       .centerAlign()
       .scaleXY()
       .scale(1.0)
@@ -142,8 +146,8 @@ function render(ctx, state, pids) {
         Text.create("Stops")
           .text(scrollText(stopsText, barW - 8, nowMs))
           .color(0xD8D8D8)
-          .pos(BAR_X + 4, STOPS_Y)
-          .size(barW - 8, 6)
+          .pos(100, STOPS_Y)
+          .size(barW, 6)
           .centerAlign()
           .scaleXY()
           .scale(0.6)
