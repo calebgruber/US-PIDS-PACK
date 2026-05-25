@@ -1,22 +1,20 @@
 include(Resources.id("jsblock:scripts/pids_util.js"));
 
 const PID_ID = "MNR-A";
-const FONT_REG = "jsblock:font/mnr_font_reg.ttf";
-const FONT_BOLD = "jsblock:font/mnr_font_bold.ttf";
-const HEADER_H = 13;
-const TRACK_X = 3;
-const TRACK_W = 22;
-const BAR_X = 26;
+const TRACK_X = 4;
+const TRACK_W = 14;
+const BAR_X = 18;
 const STATUS_W = 28;
-const TOP_ROW_Y = 14;
-const TOP_ROW_H = 18;
-const BOTTOM_ROW_Y = 38;
-const BOTTOM_ROW_H = 8;
-const TRANSITION_MS = 700;
-const SCROLL_STEP_MS = 180;
-const ENTRY_OFFSET = 4;
+const TOP_ROW_Y = 8;
+const BOTTOM_ROW_Y = 34;
+const ROW_H = 12;
+const STOPS_Y = 22;
+const TRANSITION_MS = 650;
+const SCROLL_STEP_MS = 220;
+const ENTRY_OFFSET = 5;
 const EXIT_OFFSET = 5;
 const SEARCH_ROWS = 8;
+const PLACEHOLDER_COLOR = 0x1F1F1F;
 
 function create(ctx, state, pids) {
   state.previousRows = [];
@@ -31,6 +29,8 @@ function render(ctx, state, pids) {
     .texture("jsblock:textures/mnr_bg.png")
     .size(pids.width, pids.height)
     .draw(ctx);
+
+  renderSlotPlaceholders(ctx, pids);
 
   let nextRows = getDisplayRows(pids, nowMs);
 
@@ -47,14 +47,24 @@ function render(ctx, state, pids) {
   if (!previousRows.length || elapsed >= TRANSITION_MS) {
     state.previousRows = cloneRows(currentRows);
     renderStaticRows(ctx, currentRows, pids, nowMs);
-    renderFallback(ctx, currentRows, pids);
-    return;
+  } else {
+    let progress = clamp(elapsed / TRANSITION_MS, 0, 1);
+    renderAnimatedRows(ctx, previousRows, currentRows, pids, nowMs, easeInOut(progress));
   }
 
-  let progress = clamp(elapsed / TRANSITION_MS, 0, 1);
-  let eased = easeInOut(progress);
+  renderFallback(ctx, currentRows, pids);
+  renderPidLabel(ctx, pids);
+}
 
-  renderAnimatedRows(ctx, previousRows, currentRows, pids, nowMs, eased);
+function renderSlotPlaceholders(ctx, pids) {
+  for (let i = 0; i < 2; i++) {
+    Texture.create("SlotChevron_" + i)
+      .texture("jsblock:textures/mnr_chevron.png")
+      .pos(BAR_X, slotY(i))
+      .size(getBarWidth(pids), ROW_H)
+      .color(PLACEHOLDER_COLOR)
+      .draw(ctx);
+  }
 }
 
 function renderStaticRows(ctx, rows, pids, nowMs) {
@@ -99,80 +109,72 @@ function renderAnimatedRows(ctx, previousRows, currentRows, pids, nowMs, t) {
 }
 
 function renderRow(ctx, id, row, pids, y, alpha, showStops, nowMs) {
-  let barW = pids.width - BAR_X - STATUS_W - 3;
-  let rowHeight = showStops ? TOP_ROW_H : BOTTOM_ROW_H;
-  let mainTextY = showStops ? y + 3 : y + 2;
-  let trackColor = fadeColor(0xF2F2F2, alpha);
+  let barW = getBarWidth(pids);
   let textColor = fadeColor(0xFFFFFF, alpha);
-  let stopColor = fadeColor(0xD9D9D9, alpha);
+  let dimTextColor = fadeColor(0xD8D8D8, alpha);
   let chevronColor = fadeColor(row.routeColor, alpha);
 
   Texture.create(id + "_Chevron")
     .texture("jsblock:textures/mnr_chevron.png")
     .pos(BAR_X, y)
-    .size(barW, rowHeight)
+    .size(barW, ROW_H)
     .color(chevronColor)
     .draw(ctx);
 
   Text.create(id + "_Track")
     .text(row.track)
-    .color(trackColor)
-    .pos(TRACK_X, mainTextY)
+    .color(textColor)
+    .pos(TRACK_X, y + 2)
     .size(TRACK_W, 7)
     .leftAlign()
     .scaleXY()
-    .scale(1.0)
+    .scale(0.72)
     .bold(true)
-    .font(FONT_BOLD)
     .draw(ctx);
 
   Text.create(id + "_Time")
     .text(row.departureText)
     .color(textColor)
-    .pos(BAR_X + 4, mainTextY)
-    .size(23, 7)
+    .pos(BAR_X + 5, y + 2)
+    .size(22, 7)
     .leftAlign()
     .scaleXY()
-    .scale(1.0)
+    .scale(0.72)
     .bold(true)
-    .font(FONT_BOLD)
     .draw(ctx);
 
   Text.create(id + "_Dest")
     .text(row.destination)
     .color(textColor)
-    .pos(BAR_X + 28, mainTextY)
-    .size(barW - 31, 7)
+    .pos(BAR_X + 30, y + 2)
+    .size(barW - 60, 7)
     .leftAlign()
     .scaleXY()
-    .scale(1.0)
+    .scale(0.72)
     .bold(true)
-    .font(FONT_BOLD)
     .draw(ctx);
 
   Text.create(id + "_Status")
     .text(row.status)
     .color(textColor)
-    .pos(pids.width - 3, mainTextY)
-    .size(STATUS_W - 1, 7)
+    .pos(pids.width - 4, y + 2)
+    .size(STATUS_W - 2, 7)
     .rightAlign()
     .scaleXY()
-    .scale(1.0)
+    .scale(0.65)
     .bold(true)
-    .font(FONT_BOLD)
     .draw(ctx);
 
   if (showStops && row.stopsText.length > 0) {
     Text.create(id + "_Stops")
-      .text(scrollText(row.stopsText, barW - 12, nowMs))
-      .color(stopColor)
-      .pos(BAR_X + 4, y + 11)
+      .text(scrollText(row.stopsText, barW - 8, nowMs))
+      .color(dimTextColor)
+      .pos(BAR_X + 5, STOPS_Y)
       .size(barW - 8, 6)
       .leftAlign()
       .scaleXY()
-      .scale(0.82)
+      .scale(0.6)
       .bold(false)
-      .font(FONT_REG)
       .draw(ctx);
   }
 }
@@ -183,15 +185,16 @@ function renderFallback(ctx, rows, pids) {
   Text.create("NoTrains")
     .text("NO TRAINS")
     .color(0xFFFFFF)
-    .pos(BAR_X + 4, TOP_ROW_Y + 10)
-    .size(pids.width - BAR_X - 8, 8)
+    .pos(BAR_X + 5, TOP_ROW_Y + 2)
+    .size(getBarWidth(pids) - 8, 7)
     .leftAlign()
     .scaleXY()
-    .scale(1.0)
+    .scale(0.72)
     .bold(true)
-    .font(FONT_BOLD)
     .draw(ctx);
+}
 
+function renderPidLabel(ctx, pids) {
   Text.create("PID")
     .text(PID_ID)
     .color(0x8A8A8A)
@@ -201,7 +204,6 @@ function renderFallback(ctx, rows, pids) {
     .scaleXY()
     .scale(0.8)
     .bold(true)
-    .font(FONT_BOLD)
     .draw(ctx);
 }
 
@@ -219,9 +221,14 @@ function getDisplayRows(pids, nowMs) {
     if (fallback.length >= 2 && upcoming.length >= 2) break;
   }
 
-  if (upcoming.length === 0) return fallback;
-  if (upcoming.length === 1 && fallback.length > 1 && fallback[1].key !== upcoming[0].key) {
-    upcoming.push(fallback[1]);
+  if (upcoming.length === 0) return fallback.slice(0, 2);
+  if (upcoming.length === 1) {
+    for (let i = 0; i < fallback.length; i++) {
+      if (fallback[i].key !== upcoming[0].key) {
+        upcoming.push(fallback[i]);
+        break;
+      }
+    }
   }
 
   return upcoming.slice(0, 2);
@@ -239,8 +246,8 @@ function buildRow(arrival, nowMs) {
 
   if (arrival.cancelled && arrival.cancelled()) status = "CANCELLED";
   else if (arrival.delayed && arrival.delayed()) status = "DELAYED";
-  else if (secsToDeparture >= 0 && secsToDeparture <= 30) status = "BOARDING";
-  else if (secsToDeparture < 0 && secsToDeparture >= -90) status = "AT STATION";
+  else if (secsToDeparture >= 0 && secsToDeparture <= 30) status = "BOARD";
+  else if (secsToDeparture < 0 && secsToDeparture >= -90) status = "HERE";
   else if (minsToDeparture >= 1 && minsToDeparture <= 59) status = minsToDeparture + " MIN";
 
   return {
@@ -271,7 +278,7 @@ function getStopsText(arrival) {
 function scrollText(text, pixelWidth, nowMs) {
   if (!text) return "";
 
-  let visibleChars = Math.max(12, Math.floor(pixelWidth / 4));
+  let visibleChars = Math.max(10, Math.floor(pixelWidth / 6));
   if (text.length <= visibleChars) return text;
 
   let spacer = "   •   ";
@@ -319,6 +326,10 @@ function findRowIndex(rows, key) {
     if (rows[i].key === key) return i;
   }
   return -1;
+}
+
+function getBarWidth(pids) {
+  return pids.width - BAR_X - STATUS_W - 4;
 }
 
 function slotY(index) {
