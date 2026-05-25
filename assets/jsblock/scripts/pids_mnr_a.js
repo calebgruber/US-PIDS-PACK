@@ -8,11 +8,10 @@ const TOP_ROW_Y = 20;
 const BOTTOM_ROW_Y = 45;
 const ROW_H = 12;
 const STOPS_Y = 30;
-const STOPS_REGION_X = BAR_X + Math.floor(CHEVRON_W / 2);
-const STOPS_REGION_W = Math.ceil(CHEVRON_W / 2);
-const STOPS_CHAR_PX = 3.6;      // approx at scale 0.6
+const STOPS_X = 100;
+const STOPS_CHAR_PX = 3.6;      // approx px-per-char at scale 0.6
 const STOPS_SCROLL_PX_PER_SEC = 24;
-const ROW_SHIFT_ANIM_MS = 700;
+const ROW_SHIFT_ANIM_MS = 500;
 
 const WIDTH = 186;
 const HEIGHT = 60;
@@ -50,10 +49,15 @@ function render(ctx, state, pids) {
   state.lastTopKey = topKey;
 
   let easedT = easeOutCubic(transitionT);
+  // Both rows fade up: top slides from bottom→top, bottom slides in from below
+  let topOpacity = transitioning ? easedT : 1;
   let topRowY = transitioning
     ? lerp(BOTTOM_ROW_Y, TOP_ROW_Y, easedT)
     : TOP_ROW_Y;
-  let bottomFade = transitioning ? easedT : 1;
+  let bottomOpacity = transitioning ? easedT : 1;
+  let bottomRowY = transitioning
+    ? lerp(BOTTOM_ROW_Y + ROW_H * 2, BOTTOM_ROW_Y, easedT)
+    : BOTTOM_ROW_Y;
 
   // Background
   Texture.create("BG")
@@ -92,8 +96,8 @@ function render(ctx, state, pids) {
    // .scale(0.55)
    // .draw(ctx);
 
-  drawRow(ctx, pids, topArrival, "Top", topRowY, nowMs, barW, 1, true);
-  drawRow(ctx, pids, bottomArrival, "Bottom", BOTTOM_ROW_Y, nowMs, barW, bottomFade, false);
+  drawRow(ctx, pids, topArrival, "Top", topRowY, nowMs, barW, topOpacity, true);
+  drawRow(ctx, pids, bottomArrival, "Bottom", bottomRowY, nowMs, barW, bottomOpacity, false);
 }
 
 function getStopsText(arrival) {
@@ -185,7 +189,7 @@ function drawRow(ctx, pids, arrival, id, rowY, nowMs, barW, opacity, showStops) 
         .text(scroll.text)
         .color(baseTextColor)
         .pos(scroll.x, STOPS_Y)
-        .size(STOPS_REGION_W, 6)
+        .size(barW + 100, 25)
         .leftAlign()
         .scaleXY()
         .scale(0.6)
@@ -205,14 +209,11 @@ function getStatus(arrival, secsToDep, minsToDep) {
 function getStopsScroll(text, nowMs) {
   var spacer = "   \u2022   ";
   var loop = text + spacer;
-  var loopPx = Math.max(
-    STOPS_REGION_W + 1,
-    Math.ceil(loop.length * STOPS_CHAR_PX)
-  );
+  var loopPx = Math.max(STOPS_CHAR_PX, Math.ceil(loop.length * STOPS_CHAR_PX));
   var offsetPx = ((nowMs / 1000) * STOPS_SCROLL_PX_PER_SEC) % loopPx;
   return {
-    text: loop + loop + loop,
-    x: STOPS_REGION_X - offsetPx
+    text: loop + loop,
+    x: STOPS_X - offsetPx
   };
 }
 
