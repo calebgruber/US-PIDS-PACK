@@ -60,7 +60,6 @@ function render(ctx, state, pids) {
   // Two train rows
   for (var i = 0; i < 2; i++) {
     var rowY = (i === 0) ? TOP_ROW_Y : BOTTOM_ROW_Y;
-    var centerY = rowY + ROW_H * 0.5;
     var arrival = pids.arrivals().get(i);
     var chevronColor = arrival ? arrival.routeColor() : 0x646464;
 
@@ -99,8 +98,8 @@ function render(ctx, state, pids) {
     Text.create("Track_" + i)
       .text(track)
       .color(0xFFFFFF)
-      .pos(BAR_X - 12, centerY)
-      .size(22, 25)
+      .pos(BAR_X - 12, rowY + 1)
+      .size(22, ROW_H - 2)
       .centerAlign()
       .scaleXY()
       .scale(1.0)
@@ -110,8 +109,8 @@ function render(ctx, state, pids) {
     Text.create("Time_" + i)
       .text(depStr)
       .color(0xFFFFFF)
-      .pos(BAR_X + 14, centerY)
-      .size(22, 5)
+      .pos(BAR_X + 14, rowY + 1)
+      .size(24, ROW_H - 2)
       .centerAlign()
       .scaleXY()
       .scale(1.0)
@@ -121,8 +120,8 @@ function render(ctx, state, pids) {
     Text.create("Dest_" + i)
       .text(destination)
       .color(0xFFFFFF)
-      .pos(pids.width - STATUS_W - 4, centerY)
-      .size(barW - 44, 5)
+      .pos(pids.width - STATUS_W - 4, rowY + 1)
+      .size(barW - 44, ROW_H - 2)
       .rightAlign()
       .scaleXY()
       .scale(1.0)
@@ -132,8 +131,8 @@ function render(ctx, state, pids) {
     Text.create("Status_" + i)
       .text(status)
       .color(0xFFFFFF)
-      .pos(pids.width - 4, centerY)
-      .size(STATUS_W - 2, 5)
+      .pos(pids.width - 4, rowY + 1)
+      .size(STATUS_W - 2, ROW_H - 2)
       .rightAlign()
       .scaleXY()
       .scale(1.0)
