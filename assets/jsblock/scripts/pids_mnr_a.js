@@ -33,7 +33,6 @@ function render(ctx, state, pids) {
     .pos(9, HEADER_Y)
     .size(WIDTH - 8, 22)
     .centerAlign()
-    .bold(true)
     .scaleXY()
     .scale(0.55)
     .draw(ctx);
@@ -44,7 +43,6 @@ function render(ctx, state, pids) {
     .pos(BAR_X + barW / 2, HEADER_Y)
     .size(WIDTH - 8, 50)
     .centerAlign()
-    .bold(true)
     .scaleXY()
     .scale(0.55)
     .draw(ctx);
@@ -55,7 +53,6 @@ function render(ctx, state, pids) {
     .pos(pids.width - 4, HEADER_Y)
     .size(WIDTH - 8, 50)
     .rightAlign()
-    .bold(true)
     .scaleXY()
     .scale(0.55)
     .draw(ctx);
@@ -104,7 +101,6 @@ function render(ctx, state, pids) {
       .pos(BAR_X - 12, rowY + 1)
       .size(22, ROW_H - 2)
       .centerAlign()
-      .bold(true)
       .scaleXY()
       .scale(1.0)
       .draw(ctx);
@@ -116,7 +112,6 @@ function render(ctx, state, pids) {
       .pos(BAR_X + 14, rowY + 1)
       .size(24, ROW_H - 2)
       .centerAlign()
-      .bold(true)
       .scaleXY()
       .scale(1.0)
       .draw(ctx);
@@ -128,7 +123,6 @@ function render(ctx, state, pids) {
       .pos(pids.width - STATUS_W - 4, rowY + 1)
       .size(barW - 44, ROW_H - 2)
       .rightAlign()
-      .bold(true)
       .scaleXY()
       .scale(1.0)
       .draw(ctx);
@@ -140,7 +134,6 @@ function render(ctx, state, pids) {
       .pos(pids.width - 4, rowY + 1)
       .size(STATUS_W - 2, ROW_H - 2)
       .rightAlign()
-      .bold(false)
       .scaleXY()
       .scale(1.0)
       .draw(ctx);
@@ -155,7 +148,6 @@ function render(ctx, state, pids) {
           .pos(100, STOPS_Y)
           .size(barW, 6)
           .centerAlign()
-          .bold(false)
           .scaleXY()
           .scale(0.6)
           .draw(ctx);
