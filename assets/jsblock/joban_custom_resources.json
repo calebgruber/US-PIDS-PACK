@@ -24,6 +24,11 @@
       "id": "pids_lirr_lcd_a",
       "name": "[LIRR] LIRR LCD A",
       "scriptFiles": ["jsblock:scripts/pids_lirr_lcd_a.js"]
+    },
+    {
+      "id": "pids_led_dotmatrix_a",
+      "name": "[LED] US Dot Matrix A",
+      "scriptFiles": ["jsblock:scripts/pids_led_dotmatrix_a.js"]
     }
   ]
 }
