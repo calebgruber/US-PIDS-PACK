@@ -8,8 +8,9 @@ const TOP_ROW_Y = 20;
 const BOTTOM_ROW_Y = 45;
 const ROW_H = 12;
 const STOPS_Y = 30;
-const STOPS_X = 100;
-const STOPS_CHAR_PX = 3.6;      // approx px-per-char at scale 0.6
+const STOPS_REGION_X = BAR_X + Math.floor(CHEVRON_W / 2);  // left edge of right half of chevron
+const STOPS_REGION_W = Math.ceil(CHEVRON_W / 2);            // width of right half of chevron
+const STOPS_CHAR_PX = 6.0;      // approx px-per-char at scale 1.0
 const STOPS_SCROLL_PX_PER_SEC = 24;
 const ROW_SHIFT_ANIM_MS = 500;
 
@@ -33,7 +34,7 @@ function render(ctx, state, pids) {
   if (state.lastTopKey === null) {
     state.lastTopKey = topKey;
   }
-  if (topKey !== state.lastTopKey && state.lastTopKey !== "none" && topKey !== "none") {
+  if (topKey !== state.lastTopKey && state.lastTopKey !== "none" && topKey !== "none" && state.rowTransitionStartMs === 0) {
     state.rowTransitionStartMs = nowMs;
   }
 
@@ -56,7 +57,7 @@ function render(ctx, state, pids) {
     : TOP_ROW_Y;
   let bottomOpacity = transitioning ? easedT : 1;
   let bottomRowY = transitioning
-    ? lerp(BOTTOM_ROW_Y + ROW_H * 2, BOTTOM_ROW_Y, easedT)
+    ? lerp(pids.height, BOTTOM_ROW_Y, easedT)
     : BOTTOM_ROW_Y;
 
   // Background
@@ -189,10 +190,10 @@ function drawRow(ctx, pids, arrival, id, rowY, nowMs, barW, opacity, showStops) 
         .text(scroll.text)
         .color(baseTextColor)
         .pos(scroll.x, STOPS_Y)
-        .size(barW + 100, 25)
+        .size(scroll.sizeW, ROW_H)
         .leftAlign()
         .scaleXY()
-        .scale(0.6)
+        .scale(1.0)
         .draw(ctx);
     }
   }
@@ -209,19 +210,31 @@ function getStatus(arrival, secsToDep, minsToDep) {
 function getStopsScroll(text, nowMs) {
   var spacer = "   \u2022   ";
   var loop = text + spacer;
-  var loopPx = Math.max(STOPS_CHAR_PX, Math.ceil(loop.length * STOPS_CHAR_PX));
+  var loopLen = loop.length;
+  var loopPx = loopLen * STOPS_CHAR_PX;
   var offsetPx = ((nowMs / 1000) * STOPS_SCROLL_PX_PER_SEC) % loopPx;
+  // Sub-character smooth scroll: split into whole-char index and fractional px
+  var charIdx = Math.floor(offsetPx / STOPS_CHAR_PX);
+  var pixelFract = offsetPx - charIdx * STOPS_CHAR_PX;
+  // Enough characters to fill the region plus one entering from the left
+  var numChars = Math.ceil(STOPS_REGION_W / STOPS_CHAR_PX) + 2;
+  var visStr = "";
+  for (var i = 0; i < numChars; i++) {
+    visStr += loop[(charIdx + i) % loopLen];
+  }
   return {
-    text: loop + loop,
-    x: STOPS_X - offsetPx
+    text: visStr,
+    x: STOPS_REGION_X - pixelFract,        // shifts left by < 1 char for smooth entry
+    sizeW: STOPS_REGION_W + pixelFract      // right clip stays fixed at STOPS_REGION_X + STOPS_REGION_W
   };
 }
 
 function getTrainKey(arrival) {
   if (!arrival) return "none";
-  var dep = arrival.departureTime ? arrival.departureTime() : 0;
   var dest = arrival.destination ? arrival.destination() : "";
   var routeId = arrival.routeId ? arrival.routeId() : "";
+  // Round to nearest minute so minor ms fluctuations don't produce spurious key changes
+  var dep = arrival.departureTime ? Math.round(arrival.departureTime() / 60000) : 0;
   return routeId + "|" + dep + "|" + dest;
 }
 
