@@ -8,10 +8,10 @@ const TOP_ROW_Y = 20;
 const BOTTOM_ROW_Y = 45;
 const ROW_H = 12;
 const STOPS_Y = 30;
-const STOPS_REGION_X = BAR_X + Math.floor(CHEVRON_W / 2);  // left edge of right half of chevron
-const STOPS_REGION_W = Math.ceil(CHEVRON_W / 2);            // width of right half of chevron
+const STOPS_REGION_X = BAR_X;            // left edge of full chevron
+const STOPS_REGION_W = CHEVRON_W;        // full chevron width
 const STOPS_CHAR_PX = 6.0;      // approx px-per-char at scale 1.0
-const STOPS_SCROLL_PX_PER_SEC = 24;
+const STOPS_SCROLL_PX_PER_SEC = 14;
 const ROW_SHIFT_ANIM_MS = 500;
 
 const WIDTH = 186;
