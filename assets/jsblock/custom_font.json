@@ -1,0 +1,26 @@
+{
+  "providers": [
+    {
+      "type": "ttf",
+      "file": "minecraft:font/mnr_font_reg.ttf",
+      "size": 11,
+      "oversample": 1.0,
+      "shift": [0, 0]
+    },
+    {
+      "type": "ttf",
+      "file": "minecraft:font/mnr_font_bold.ttf",
+      "size": 12,
+      "oversample": 1.0,
+      "shift": [0, 0]
+    },
+    {
+      "type": "ttf",
+      "file": "minecraft:font/led.ttf",
+      "size": 12,
+      "oversample": 1.0,
+      "shift": [0, 0]
+
+    }
+  ]
+}
