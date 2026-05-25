@@ -5,16 +5,17 @@ const TRACK_X = 4;
 const TRACK_W = 14;
 const BAR_X = 18;
 const STATUS_W = 28;
-const TOP_ROW_Y = 8;
+const HEADER_Y = 2;
+const TOP_ROW_Y = 12;
 const BOTTOM_ROW_Y = 34;
-const ROW_H = 12;
-const STOPS_Y = 22;
+const ROW_H = 10;
+const STOPS_Y = 24;
 const TRANSITION_MS = 650;
 const SCROLL_STEP_MS = 220;
 const ENTRY_OFFSET = 5;
 const EXIT_OFFSET = 5;
 const SEARCH_ROWS = 8;
-const PLACEHOLDER_COLOR = 0x1F1F1F;
+const PLACEHOLDER_COLOR = 0x646464;
 
 function create(ctx, state, pids) {
   state.previousRows = [];
@@ -30,6 +31,7 @@ function render(ctx, state, pids) {
     .size(pids.width, pids.height)
     .draw(ctx);
 
+  renderHeaders(ctx, pids);
   renderSlotPlaceholders(ctx, pids);
 
   let nextRows = getDisplayRows(pids, nowMs);
@@ -65,6 +67,43 @@ function renderSlotPlaceholders(ctx, pids) {
       .color(PLACEHOLDER_COLOR)
       .draw(ctx);
   }
+}
+
+function renderHeaders(ctx, pids) {
+  let headerColor = 0xCFCFCF;
+
+  Text.create("HdrTrack")
+    .text("TRACK")
+    .color(headerColor)
+    .pos(TRACK_X, HEADER_Y)
+    .size(TRACK_W + 4, 6)
+    .leftAlign()
+    .scaleXY()
+    .scale(0.55)
+    .bold(true)
+    .draw(ctx);
+
+  Text.create("HdrDeparting")
+    .text("DEPARTING TRAIN")
+    .color(headerColor)
+    .pos(BAR_X + 4, HEADER_Y)
+    .size(getBarWidth(pids) - 4, 6)
+    .leftAlign()
+    .scaleXY()
+    .scale(0.55)
+    .bold(true)
+    .draw(ctx);
+
+  Text.create("HdrStatus")
+    .text("STATUS")
+    .color(headerColor)
+    .pos(pids.width - 4, HEADER_Y)
+    .size(STATUS_W - 2, 6)
+    .rightAlign()
+    .scaleXY()
+    .scale(0.55)
+    .bold(true)
+    .draw(ctx);
 }
 
 function renderStaticRows(ctx, rows, pids, nowMs) {
@@ -124,7 +163,7 @@ function renderRow(ctx, id, row, pids, y, alpha, showStops, nowMs) {
   Text.create(id + "_Track")
     .text(row.track)
     .color(textColor)
-    .pos(TRACK_X, y + 2)
+    .pos(TRACK_X, y + 1)
     .size(TRACK_W, 7)
     .leftAlign()
     .scaleXY()
@@ -135,7 +174,7 @@ function renderRow(ctx, id, row, pids, y, alpha, showStops, nowMs) {
   Text.create(id + "_Time")
     .text(row.departureText)
     .color(textColor)
-    .pos(BAR_X + 5, y + 2)
+    .pos(BAR_X + 4, y + 1)
     .size(22, 7)
     .leftAlign()
     .scaleXY()
@@ -146,9 +185,9 @@ function renderRow(ctx, id, row, pids, y, alpha, showStops, nowMs) {
   Text.create(id + "_Dest")
     .text(row.destination)
     .color(textColor)
-    .pos(BAR_X + 30, y + 2)
-    .size(barW - 60, 7)
-    .leftAlign()
+    .pos(BAR_X + barW - 4, y + 1)
+    .size(barW - 52, 7)
+    .rightAlign()
     .scaleXY()
     .scale(0.72)
     .bold(true)
@@ -157,7 +196,7 @@ function renderRow(ctx, id, row, pids, y, alpha, showStops, nowMs) {
   Text.create(id + "_Status")
     .text(row.status)
     .color(textColor)
-    .pos(pids.width - 4, y + 2)
+    .pos(pids.width - 4, y + 1)
     .size(STATUS_W - 2, 7)
     .rightAlign()
     .scaleXY()
@@ -169,7 +208,7 @@ function renderRow(ctx, id, row, pids, y, alpha, showStops, nowMs) {
     Text.create(id + "_Stops")
       .text(scrollText(row.stopsText, barW - 8, nowMs))
       .color(dimTextColor)
-      .pos(BAR_X + 5, STOPS_Y)
+      .pos(BAR_X + 4, STOPS_Y)
       .size(barW - 8, 6)
       .leftAlign()
       .scaleXY()
@@ -242,13 +281,12 @@ function buildRow(arrival, nowMs) {
   let routeColor = arrival.routeColor ? arrival.routeColor() : 0xFFFFFF;
   let track = arrival.platformName && arrival.platformName() ? arrival.platformName() : "--";
   let destination = arrival.destination && arrival.destination() ? arrival.destination() : "TBD";
-  let status = "ON TIME";
+  let status = "0 MIN";
 
   if (arrival.cancelled && arrival.cancelled()) status = "CANCELLED";
   else if (arrival.delayed && arrival.delayed()) status = "DELAYED";
-  else if (secsToDeparture >= 0 && secsToDeparture <= 30) status = "BOARD";
-  else if (secsToDeparture < 0 && secsToDeparture >= -90) status = "HERE";
-  else if (minsToDeparture >= 1 && minsToDeparture <= 59) status = minsToDeparture + " MIN";
+  else if (secsToDeparture < 0 && secsToDeparture >= -90) status = "AT STATION";
+  else if (minsToDeparture >= 1) status = minsToDeparture + " MIN";
 
   return {
     key: buildRowKey(arrival, departureMs, destination, track),
