@@ -107,28 +107,43 @@ function renderHeaders(ctx, pids) {
 }
 
 function renderStaticRows(ctx, rows, pids, nowMs) {
-  if (rows.length === 0) return;
-  let row = rows[0];
-  renderRow(ctx, "Row_0", row, pids, slotY(0), 1.0, true, nowMs);
-  renderRow(ctx, "Row_1", row, pids, slotY(1), 1.0, false, nowMs);
+  for (let i = 0; i < rows.length && i < 2; i++) {
+    renderRow(ctx, "Row_" + i, rows[i], pids, slotY(i), 1.0, i === 0, nowMs);
+  }
 }
 
 function renderAnimatedRows(ctx, previousRows, currentRows, pids, nowMs, t) {
-  let prevRow = previousRows.length > 0 ? previousRows[0] : null;
-  let currRow = currentRows.length > 0 ? currentRows[0] : null;
+  for (let i = 0; i < previousRows.length && i < 2; i++) {
+    let previousRow = previousRows[i];
+    if (findRowIndex(currentRows, previousRow.key) >= 0) continue;
 
-  if (prevRow && (!currRow || prevRow.key !== currRow.key)) {
-    renderRow(ctx, "Prev_0", prevRow, pids, slotY(0) - EXIT_OFFSET * t, 1.0 - t, false, nowMs);
-    renderRow(ctx, "Prev_1", prevRow, pids, slotY(1) - EXIT_OFFSET * t, 1.0 - t, false, nowMs);
+    renderRow(
+      ctx,
+      "Prev_" + i,
+      previousRow,
+      pids,
+      slotY(i) - EXIT_OFFSET * t,
+      1.0 - t,
+      false,
+      nowMs
+    );
   }
 
-  if (currRow) {
-    let sameKey = prevRow && prevRow.key === currRow.key;
-    let alpha = sameKey ? 1.0 : t;
-    let y0 = sameKey ? slotY(0) : slotY(0) + ENTRY_OFFSET * (1.0 - t);
-    let y1 = sameKey ? slotY(1) : slotY(1) + ENTRY_OFFSET * (1.0 - t);
-    renderRow(ctx, "Current_0", currRow, pids, y0, alpha, true, nowMs);
-    renderRow(ctx, "Current_1", currRow, pids, y1, alpha, false, nowMs);
+  for (let i = 0; i < currentRows.length && i < 2; i++) {
+    let row = currentRows[i];
+    let previousIndex = findRowIndex(previousRows, row.key);
+    let y = slotY(i);
+    let alpha = 1.0;
+
+    if (previousIndex >= 0 && previousIndex !== i) {
+      y = lerp(slotY(previousIndex), slotY(i), t);
+      alpha = 0.65 + 0.35 * t;
+    } else if (previousIndex < 0) {
+      y = slotY(i) + ENTRY_OFFSET * (1.0 - t);
+      alpha = t;
+    }
+
+    renderRow(ctx, "Current_" + i, row, pids, y, alpha, i === 0, nowMs);
   }
 }
 
@@ -232,18 +247,30 @@ function renderPidLabel(ctx, pids) {
 }
 
 function getDisplayRows(pids, nowMs) {
-  let fallback = null;
+  let upcoming = [];
+  let fallback = [];
 
   for (let i = 0; i < SEARCH_ROWS; i++) {
     let arrival = pids.arrivals().get(i);
     if (!arrival) continue;
 
     let row = buildRow(arrival, nowMs);
-    if (!fallback) fallback = row;
-    if (row.secsToDeparture >= -45) return [row];
+    if (fallback.length < 2) fallback.push(row);
+    if (row.secsToDeparture >= -45 && upcoming.length < 2) upcoming.push(row);
+    if (fallback.length >= 2 && upcoming.length >= 2) break;
   }
 
-  return fallback ? [fallback] : [];
+  if (upcoming.length === 0) return fallback.slice(0, 2);
+  if (upcoming.length === 1) {
+    for (let i = 0; i < fallback.length; i++) {
+      if (fallback[i].key !== upcoming[0].key) {
+        upcoming.push(fallback[i]);
+        break;
+      }
+    }
+  }
+
+  return upcoming.slice(0, 2);
 }
 
 function buildRow(arrival, nowMs) {
