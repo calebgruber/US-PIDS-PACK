@@ -29,6 +29,11 @@
       "id": "pids_led_dotmatrix_a",
       "name": "[LED] US Dot Matrix A",
       "scriptFiles": ["jsblock:scripts/pids_led_dotmatrix_a.js"]
+    },
+    {
+      "id": "pids_mnr_lirr_a",
+      "name": "[MNR/LIRR] Metro North + LIRR LED A",
+      "scriptFiles": ["jsblock:scripts/pids_mnr_lirr_a.js"]
     }
   ]
 }
