@@ -10,8 +10,9 @@ const ROW_H = 12;
 const STOPS_Y = 30;
 const STOPS_REGION_X = BAR_X;            // left edge of full chevron
 const STOPS_REGION_W = CHEVRON_W;        // full chevron width
-const STOPS_CHAR_PX = 6.0;      // approx px-per-char at scale 1.0
-const STOPS_SCROLL_PX_PER_SEC = 14;
+const STOPS_SCALE = 0.82;
+const STOPS_CHAR_PX = 6.0 * STOPS_SCALE; // approx px-per-char at stops scale
+const STOPS_SCROLL_PX_PER_SEC = 12;
 const ROW_SHIFT_ANIM_MS = 500;
 
 const WIDTH = 186;
@@ -22,6 +23,7 @@ const PID_ID = "MNR-LCD-A";
 function create(ctx, state, pids) {
   state.lastTopKey = null;
   state.rowTransitionStartMs = 0;
+  state.stopsScrollCache = {};
 }
 
 function render(ctx, state, pids) {
@@ -97,8 +99,8 @@ function render(ctx, state, pids) {
    // .scale(0.55)
    // .draw(ctx);
 
-  drawRow(ctx, pids, topArrival, "Top", topRowY, nowMs, barW, topOpacity, true);
-  drawRow(ctx, pids, bottomArrival, "Bottom", bottomRowY, nowMs, barW, bottomOpacity, false);
+  drawRow(ctx, state, pids, topArrival, "Top", topRowY, nowMs, barW, topOpacity, true);
+  drawRow(ctx, state, pids, bottomArrival, "Bottom", bottomRowY, nowMs, barW, bottomOpacity, false);
 }
 
 function getStopsText(arrival) {
@@ -112,7 +114,7 @@ function getStopsText(arrival) {
   return stops.join(" \u2022 ");
 }
 
-function drawRow(ctx, pids, arrival, id, rowY, nowMs, barW, opacity, showStops) {
+function drawRow(ctx, state, pids, arrival, id, rowY, nowMs, barW, opacity, showStops) {
   var clampedOpacity = clamp01(opacity);
   var baseTextColor = blendColor(0x606060, 0xFFFFFF, clampedOpacity);
   var chevronColor = arrival ? arrival.routeColor() : 0x646464;
@@ -129,14 +131,13 @@ function drawRow(ctx, pids, arrival, id, rowY, nowMs, barW, opacity, showStops) 
 
   var depMs = arrival.departureTime();
   var secsToDep = Math.floor((depMs - nowMs) / 1000);
-  var minsToDep = Math.floor(secsToDep / 60);
   var depDate = new Date(depMs);
   var depStr = depDate.getHours().toString().padStart(2, "0") + ":" +
                depDate.getMinutes().toString().padStart(2, "0");
 
   var track = arrival.platformName() ? arrival.platformName() : "--";
   var destination = arrival.destination() ? arrival.destination() : "TBD";
-  var status = getStatus(arrival, secsToDep, minsToDep);
+  var status = getStatus(arrival, secsToDep);
 
   // Track number (left of chevron)
   Text.create("Track_" + id)
@@ -185,7 +186,7 @@ function drawRow(ctx, pids, arrival, id, rowY, nowMs, barW, opacity, showStops) 
   if (showStops) {
     var stopsText = getStopsText(arrival);
     if (stopsText) {
-      var scroll = getStopsScroll(stopsText, nowMs);
+      var scroll = getStopsScroll(state, stopsText, nowMs);
       Text.create("Stops")
         .text(scroll.text)
         .color(baseTextColor)
@@ -193,39 +194,49 @@ function drawRow(ctx, pids, arrival, id, rowY, nowMs, barW, opacity, showStops) 
         .size(scroll.sizeW, ROW_H)
         .leftAlign()
         .scaleXY()
-        .scale(1.0)
+        .scale(STOPS_SCALE)
         .draw(ctx);
     }
   }
 }
 
-function getStatus(arrival, secsToDep, minsToDep) {
+function getStatus(arrival, secsToDep) {
   if (arrival.cancelled && arrival.cancelled()) return "CANCELLED";
   if (arrival.delayed && arrival.delayed()) return "DELAYED";
-  if (secsToDep <= 30 && secsToDep >= -90) return "AT STATION";
-  if (minsToDep >= 1 && minsToDep <= 5) return "in " + minsToDep + " min";
-  return "ON TIME";
+  if (secsToDep <= 30) return "AT STATION";
+  var countdownMins = Math.max(1, Math.ceil(secsToDep / 60));
+  return countdownMins + " min";
 }
 
-function getStopsScroll(text, nowMs) {
+function getStopsScroll(state, text, nowMs) {
   var spacer = "   \u2022   ";
-  var loop = text + spacer;
-  var loopLen = loop.length;
-  var loopPx = loopLen * STOPS_CHAR_PX;
+  var cache = state.stopsScrollCache[text];
+  if (!cache) {
+    var loop = text + spacer;
+    var loopLen = loop.length;
+    var numChars = Math.ceil(STOPS_REGION_W / STOPS_CHAR_PX) + 3;
+    var repeated = loop;
+    while (repeated.length < loopLen + numChars) {
+      repeated += loop;
+    }
+    cache = {
+      loopLen: loopLen,
+      loopPx: loopLen * STOPS_CHAR_PX,
+      numChars: numChars,
+      repeated: repeated
+    };
+    state.stopsScrollCache[text] = cache;
+  }
+
+  var loopPx = cache.loopPx;
   var offsetPx = ((nowMs / 1000) * STOPS_SCROLL_PX_PER_SEC) % loopPx;
-  // Sub-character smooth scroll: split into whole-char index and fractional px
   var charIdx = Math.floor(offsetPx / STOPS_CHAR_PX);
   var pixelFract = offsetPx - charIdx * STOPS_CHAR_PX;
-  // Enough characters to fill the region plus one entering from the left
-  var numChars = Math.ceil(STOPS_REGION_W / STOPS_CHAR_PX) + 2;
-  var visStr = "";
-  for (var i = 0; i < numChars; i++) {
-    visStr += loop[(charIdx + i) % loopLen];
-  }
+
   return {
-    text: visStr,
-    x: STOPS_REGION_X - pixelFract,        // shifts left by < 1 char for smooth entry
-    sizeW: STOPS_REGION_W + pixelFract      // right clip stays fixed at STOPS_REGION_X + STOPS_REGION_W
+    text: cache.repeated.slice(charIdx, charIdx + cache.numChars),
+    x: STOPS_REGION_X - pixelFract,
+    sizeW: STOPS_REGION_W + pixelFract
   };
 }
 
