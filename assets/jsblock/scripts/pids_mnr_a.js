@@ -10,6 +10,8 @@ const ROW_H = 12;
 const STOPS_REGION_X = BAR_X;            // full chevron width
 const STOPS_REGION_W = CHEVRON_W;        // full chevron width
 const STOPS_SCALE = 0.74;                // small static text
+const STOPS_CHAR_PX = 6.0 * STOPS_SCALE;
+const STOPS_SCROLL_PX_PER_SEC = 8;
 const ROW_SHIFT_ANIM_MS = 500;
 
 const WIDTH = 186;
@@ -183,7 +185,7 @@ function drawRow(ctx, state, pids, arrival, id, rowY, nowMs, barW, opacity, show
     var stopsText = getStopsText(arrival);
     if (stopsText) {
       Text.create("Stops")
-        .text(stopsText)
+        .text(getStopsMarqueeText(stopsText, nowMs))
         .color(baseTextColor)
         .pos(STOPS_REGION_X, rowY + ROW_H + 1)
         .size(STOPS_REGION_W, ROW_H)
@@ -201,6 +203,22 @@ function getStatus(arrival, secsToDep) {
   if (secsToDep <= 30) return "AT STATION";
   var countdownMins = Math.max(1, Math.ceil(secsToDep / 60));
   return countdownMins + " min";
+}
+
+function getStopsMarqueeText(text, nowMs) {
+  var loop = text + "   \u2022   ";
+  if (text.length === 0) return "";
+  if (text.length <= 1) return text;
+
+  var visibleChars = Math.max(1, Math.ceil(STOPS_REGION_W / STOPS_CHAR_PX) + 1);
+  var charOffset = Math.floor(((nowMs / 1000) * STOPS_SCROLL_PX_PER_SEC) / STOPS_CHAR_PX);
+  var start = charOffset % loop.length;
+
+  var repeated = loop;
+  while (repeated.length < start + visibleChars) {
+    repeated += loop;
+  }
+  return repeated.substring(start, start + visibleChars);
 }
 
 function getTrainKey(arrival) {
