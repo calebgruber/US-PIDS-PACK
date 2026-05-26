@@ -22,6 +22,9 @@ const PID_ID = "MNR-LCD-A";
 function create(ctx, state, pids) {
   state.lastTopKey = null;
   state.rowTransitionStartMs = 0;
+  state.stopsScrollText = "";
+  state.stopsScrollPx = 0;
+  state.stopsLastFrameMs = 0;
 }
 
 function render(ctx, state, pids) {
@@ -184,11 +187,11 @@ function drawRow(ctx, state, pids, arrival, id, rowY, nowMs, barW, opacity, show
   if (showStops) {
     var stopsText = getStopsText(arrival);
     if (stopsText) {
-      var marquee = getStopsMarquee(stopsText, nowMs);
+      var marquee = getStopsMarquee(state, stopsText, nowMs);
       Text.create("Stops")
         .text(marquee.text)
         .color(baseTextColor)
-        .pos(STOPS_REGION_X - marquee.subPx, rowY + ROW_H + 1)
+        .pos(STOPS_REGION_X - marquee.offsetPx, rowY + ROW_H + 1)
         .size(STOPS_REGION_W, ROW_H)
         .leftAlign()
         .scaleXY()
@@ -206,23 +209,24 @@ function getStatus(arrival, secsToDep) {
   return countdownMins + " min";
 }
 
-function getStopsMarquee(text, nowMs) {
+function getStopsMarquee(state, text, nowMs) {
   var loop = text + " \u2022 ";
-  if (text.length === 0) return { text: "", subPx: 0 };
-  if (text.length <= 1) return { text: text, subPx: 0 };
+  if (text.length === 0) return { text: "", offsetPx: 0 };
+  if (text.length <= 1) return { text: text, offsetPx: 0 };
 
-  var totalPx = (nowMs / 1000) * STOPS_SCROLL_PX_PER_SEC;
-  var charOffset = Math.floor(totalPx / STOPS_CHAR_PX);
-  var subPx = totalPx % STOPS_CHAR_PX;
-
-  var visibleChars = Math.max(1, Math.ceil(STOPS_REGION_W / STOPS_CHAR_PX) + 2);
-  var start = charOffset % loop.length;
-
-  var repeated = loop;
-  while (repeated.length < start + visibleChars) {
-    repeated += loop;
+  if (state.stopsScrollText !== text) {
+    state.stopsScrollText = text;
+    state.stopsScrollPx = 0;
+    state.stopsLastFrameMs = nowMs;
   }
-  return { text: repeated.substring(start, start + visibleChars), subPx: subPx };
+
+  var deltaMs = state.stopsLastFrameMs > 0 ? Math.max(0, nowMs - state.stopsLastFrameMs) : 0;
+  state.stopsScrollPx += (deltaMs / 1000) * STOPS_SCROLL_PX_PER_SEC;
+  state.stopsLastFrameMs = nowMs;
+
+  var loopPx = loop.length * STOPS_CHAR_PX;
+  var repeated = loop + loop + loop;
+  return { text: repeated, offsetPx: loopPx > 0 ? state.stopsScrollPx % loopPx : 0 };
 }
 
 function getTrainKey(arrival) {
