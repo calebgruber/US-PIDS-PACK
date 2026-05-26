@@ -7,12 +7,9 @@ const HEADER_Y = 2;
 const TOP_ROW_Y = 20;
 const BOTTOM_ROW_Y = 45;
 const ROW_H = 12;
-const STOPS_Y = TOP_ROW_Y + ROW_H + 1;   // right under top chevron
 const STOPS_REGION_X = BAR_X;            // full chevron width
 const STOPS_REGION_W = CHEVRON_W;        // full chevron width
-const STOPS_SCALE = 0.88;
-const STOPS_CHAR_PX = 6.0 * STOPS_SCALE; // approx px-per-char at stops scale
-const STOPS_SCROLL_PX_PER_SEC = 8;
+const STOPS_SCALE = 0.74;                // small static text
 const ROW_SHIFT_ANIM_MS = 500;
 
 const WIDTH = 186;
@@ -23,7 +20,6 @@ const PID_ID = "MNR-LCD-A";
 function create(ctx, state, pids) {
   state.lastTopKey = null;
   state.rowTransitionStartMs = 0;
-  state.stopsScrollCache = {};
 }
 
 function render(ctx, state, pids) {
@@ -186,12 +182,11 @@ function drawRow(ctx, state, pids, arrival, id, rowY, nowMs, barW, opacity, show
   if (showStops) {
     var stopsText = getStopsText(arrival);
     if (stopsText) {
-      var scroll = getStopsScroll(state, stopsText, nowMs);
       Text.create("Stops")
-        .text(scroll.text)
+        .text(stopsText)
         .color(baseTextColor)
-        .pos(scroll.x, STOPS_Y)
-        .size(scroll.sizeW, ROW_H)
+        .pos(STOPS_REGION_X, rowY + ROW_H + 1)
+        .size(STOPS_REGION_W, ROW_H)
         .leftAlign()
         .scaleXY()
         .scale(STOPS_SCALE)
@@ -206,33 +201,6 @@ function getStatus(arrival, secsToDep) {
   if (secsToDep <= 30) return "AT STATION";
   var countdownMins = Math.max(1, Math.ceil(secsToDep / 60));
   return countdownMins + " min";
-}
-
-function getStopsScroll(state, text, nowMs) {
-  var spacer = "   \u2022   ";
-  var cache = state.stopsScrollCache[text];
-  if (!cache) {
-    var loop = text + spacer;
-    var repeated = loop;
-    var minChars = Math.ceil((STOPS_REGION_W + loop.length * STOPS_CHAR_PX) / STOPS_CHAR_PX) + loop.length;
-    while (repeated.length < minChars) {
-      repeated += loop;
-    }
-    cache = {
-      loopPx: loop.length * STOPS_CHAR_PX,
-      repeated: repeated
-    };
-    state.stopsScrollCache[text] = cache;
-  }
-
-  var loopPx = cache.loopPx;
-  var offsetPx = ((nowMs / 1000) * STOPS_SCROLL_PX_PER_SEC) % loopPx;
-
-  return {
-    text: cache.repeated,
-    x: STOPS_REGION_X - offsetPx,
-    sizeW: STOPS_REGION_W
-  };
 }
 
 function getTrainKey(arrival) {
