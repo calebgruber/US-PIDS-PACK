@@ -11,6 +11,7 @@ const SLIDE_AMOUNT = 10;    // px — rows slide up from this offset on entry
 
 function create(ctx, state, pids) {
   state.firstDepTime = null;  // departure time of the first-listed train
+  state.secondDepTime = null; // departure time of the second-listed train
   state.animStartMs = 0;      // timestamp when the last departure-triggered animation began
 }
 
@@ -52,15 +53,24 @@ function render(ctx, state, pids) {
     .scale(1.0)
     .draw(ctx);
 
-  // --- Departure detection: trigger one-shot animation when the first train changes ---
+  // --- Departure detection: trigger once when prior row-2 train shifts into row-1 ---
   let firstArr = pids.arrivals().get(0);
-  let currentFirstDepTime = firstArr ? firstArr.departureTime() : null;
+  let secondArr = pids.arrivals().get(1);
+  let currentFirstDepTime = firstArr ? Number(firstArr.departureTime()) : null;
+  let currentSecondDepTime = secondArr ? Number(secondArr.departureTime()) : null;
 
-  if (state.firstDepTime !== null && state.firstDepTime !== currentFirstDepTime) {
-    // First train has left — start the entry animation for the new pair
+  if (
+    state.firstDepTime !== null &&
+    state.secondDepTime !== null &&
+    currentFirstDepTime !== null &&
+    currentFirstDepTime !== state.firstDepTime &&
+    currentFirstDepTime === state.secondDepTime
+  ) {
+    // First train has truly left and the next queued train moved up.
     state.animStartMs = nowMs;
   }
   state.firstDepTime = currentFirstDepTime;
+  state.secondDepTime = currentSecondDepTime;
 
   let elapsed = nowMs - state.animStartMs;
   let inAnim = state.animStartMs > 0 && elapsed < ANIM_DURATION;
@@ -93,6 +103,9 @@ function render(ctx, state, pids) {
     let slideOffset = inAnim ? Math.round((1 - animT) * SLIDE_AMOUNT) : 0;
     let drawY = rowY + slideOffset;
     let drawCenterY = drawY + ROW_HEIGHT * 0.5;
+
+    // Keep animation hidden outside bounds; draw only when fully on screen.
+    if (drawY < 0 || (drawY + ROW_HEIGHT) > HEIGHT) continue;
 
     // --- Row background ---
     Texture.create("RowBG_" + i)
