@@ -11,7 +11,7 @@ const STOPS_REGION_X = BAR_X;            // full chevron width
 const STOPS_REGION_W = CHEVRON_W;        // full chevron width
 const STOPS_SCALE = 0.74;                // small static text
 const STOPS_CHAR_PX = 6.0 * STOPS_SCALE;
-const STOPS_SCROLL_PX_PER_SEC = 8;
+const STOPS_SCROLL_PX_PER_SEC = 4;
 const ROW_SHIFT_ANIM_MS = 500;
 
 const WIDTH = 186;
