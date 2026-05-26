@@ -31,17 +31,16 @@ function render(ctx, state, pids) {
 
   // Next train
   let nextTrain = pids.arrivals().get(0);
-  let minsToNext = nextTrain
-    ? Math.floor((nextTrain.arrivalTime() - nowMs) / 60000)
+  let secsToArr = nextTrain ? Math.floor((nextTrain.arrivalTime() - nowMs) / 1000) : null;
+  let minsToNext = nextTrain && secsToArr > 0
+    ? Math.max(1, Math.ceil(secsToArr / 60))
     : null;
 
   // Status logic
-  let secsToDep = nextTrain ? Math.floor((nextTrain.departureTime() - nowMs) / 1000) : null;
   let status = "";
 
   if (!nextTrain) status = "";
-  else if (secsToDep <= 10 && secsToDep >= 0) status = "LAST CALL";
-  else if (secsToDep <= 30 && secsToDep > 10) status = "BOARDING";
+  else if (secsToArr <= 0) status = "AT STATION";
   else if (minsToNext >= 1 && minsToNext <= 5) status = "in " + minsToNext + " min";
   else status = "ON TIME";
 

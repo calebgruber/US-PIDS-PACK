@@ -128,14 +128,15 @@ function drawRow(ctx, state, pids, arrival, id, rowY, nowMs, barW, opacity, show
   if (!arrival) return;
 
   var depMs = arrival.departureTime();
-  var secsToDep = Math.floor((depMs - nowMs) / 1000);
-  var depDate = new Date(depMs);
-  var depStr = depDate.getHours().toString().padStart(2, "0") + ":" +
-               depDate.getMinutes().toString().padStart(2, "0");
+  var arrMs = arrival.arrivalTime ? arrival.arrivalTime() : depMs;
+  var secsToArr = Math.floor((arrMs - nowMs) / 1000);
+  var arrDate = new Date(arrMs);
+  var arrStr = arrDate.getHours().toString().padStart(2, "0") + ":" +
+               arrDate.getMinutes().toString().padStart(2, "0");
 
   var track = arrival.platformName() ? arrival.platformName() : "--";
   var destination = arrival.destination() ? arrival.destination() : "TBD";
-  var status = getStatus(arrival, secsToDep);
+  var status = getStatus(arrival, secsToArr);
 
   // Track number (left of chevron)
   Text.create("Track_" + id)
@@ -148,9 +149,9 @@ function drawRow(ctx, state, pids, arrival, id, rowY, nowMs, barW, opacity, show
     .scale(1.0)
     .draw(ctx);
 
-  // Departure time (left side of chevron)
+  // Arrival time (left side of chevron)
   Text.create("Time_" + id)
-    .text(depStr)
+    .text(arrStr)
     .color(baseTextColor)
     .pos(BAR_X + 14, rowY + 2)
     .size(24, ROW_H - 2)
@@ -197,11 +198,11 @@ function drawRow(ctx, state, pids, arrival, id, rowY, nowMs, barW, opacity, show
   }
 }
 
-function getStatus(arrival, secsToDep) {
+function getStatus(arrival, secsToArr) {
   if (arrival.cancelled && arrival.cancelled()) return "CANCELLED";
   if (arrival.delayed && arrival.delayed()) return "DELAYED";
-  if (secsToDep <= 30) return "AT STATION";
-  var countdownMins = Math.max(1, Math.ceil(secsToDep / 60));
+  if (secsToArr <= 0) return "AT STATION";
+  var countdownMins = Math.max(1, Math.ceil(secsToArr / 60));
   return countdownMins + " min";
 }
 
