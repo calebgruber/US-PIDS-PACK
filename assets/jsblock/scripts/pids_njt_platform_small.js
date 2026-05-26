@@ -10,8 +10,8 @@ const ANIM_DURATION = 700;  // ms — duration of fade + slide animation
 const SLIDE_AMOUNT = 10;    // px — rows slide up from this offset on entry
 
 function create(ctx, state, pids) {
-  state.firstDepTime = null;  // departure time of the first-listed train
-  state.secondDepTime = null; // departure time of the second-listed train
+  state.firstTrainKey = null;  // identity key of first-listed train
+  state.secondTrainKey = null; // identity key of second-listed train
   state.animStartMs = 0;      // timestamp when the last departure-triggered animation began
 }
 
@@ -56,21 +56,23 @@ function render(ctx, state, pids) {
   // --- Departure detection: trigger once when prior row-2 train shifts into row-1 ---
   let firstArr = pids.arrivals().get(0);
   let secondArr = pids.arrivals().get(1);
-  let currentFirstDepTime = firstArr ? Number(firstArr.departureTime()) : null;
-  let currentSecondDepTime = secondArr ? Number(secondArr.departureTime()) : null;
+  let currentFirstTrainKey = getTrainKey(firstArr);
+  let currentSecondTrainKey = getTrainKey(secondArr);
 
   if (
-    state.firstDepTime !== null &&
-    state.secondDepTime !== null &&
-    currentFirstDepTime !== null &&
-    currentFirstDepTime !== state.firstDepTime &&
-    currentFirstDepTime === state.secondDepTime
+    state.firstTrainKey !== null &&
+    state.firstTrainKey !== "none" &&
+    state.secondTrainKey !== null &&
+    state.secondTrainKey !== "none" &&
+    currentFirstTrainKey !== "none" &&
+    currentFirstTrainKey !== state.firstTrainKey &&
+    currentFirstTrainKey === state.secondTrainKey
   ) {
     // First train has truly left and the next queued train moved up.
     state.animStartMs = nowMs;
   }
-  state.firstDepTime = currentFirstDepTime;
-  state.secondDepTime = currentSecondDepTime;
+  state.firstTrainKey = currentFirstTrainKey;
+  state.secondTrainKey = currentSecondTrainKey;
 
   let elapsed = nowMs - state.animStartMs;
   let inAnim = state.animStartMs > 0 && elapsed < ANIM_DURATION;
@@ -202,3 +204,11 @@ function render(ctx, state, pids) {
 }
 
 function dispose(ctx, state, pids) {}
+
+function getTrainKey(arrival) {
+  if (!arrival) return "none";
+  let dest = arrival.destination ? String(arrival.destination() || "") : "";
+  let route = arrival.routeName ? String(arrival.routeName() || "") : "";
+  let depMin = arrival.departureTime ? Math.round(Number(arrival.departureTime()) / 60000) : 0;
+  return route + "|" + depMin + "|" + dest;
+}
