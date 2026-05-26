@@ -11,7 +11,7 @@ const STOPS_REGION_X = BAR_X;            // full chevron width
 const STOPS_REGION_W = CHEVRON_W;        // full chevron width
 const STOPS_SCALE = 0.74;                // small static text
 const STOPS_CHAR_PX = 6.0 * STOPS_SCALE;
-const STOPS_SCROLL_PX_PER_SEC = 4;
+const STOPS_PAGE_MS = 3000;
 const ROW_SHIFT_ANIM_MS = 500;
 
 const WIDTH = 186;
@@ -22,9 +22,6 @@ const PID_ID = "MNR-LCD-A";
 function create(ctx, state, pids) {
   state.lastTopKey = null;
   state.rowTransitionStartMs = 0;
-  state.stopsScrollText = "";
-  state.stopsScrollPx = 0;
-  state.stopsLastFrameMs = 0;
 }
 
 function render(ctx, state, pids) {
@@ -104,7 +101,7 @@ function render(ctx, state, pids) {
   drawRow(ctx, state, pids, bottomArrival, "Bottom", bottomRowY, nowMs, barW, bottomOpacity, false);
 }
 
-function getStopsText(arrival) {
+function getStopsText(arrival, nowMs) {
   var route = arrival.route && arrival.route();
   if (!route) return "";
   var platforms = route.getPlatforms();
@@ -112,7 +109,7 @@ function getStopsText(arrival) {
   for (var i = 0; i < platforms.size(); i++) {
     stops.push(platforms.get(i).getStationName());
   }
-  return stops.join(" \u2022 ");
+  return getStopsPage(stops, nowMs);
 }
 
 function drawRow(ctx, state, pids, arrival, id, rowY, nowMs, barW, opacity, showStops) {
@@ -185,13 +182,12 @@ function drawRow(ctx, state, pids, arrival, id, rowY, nowMs, barW, opacity, show
     .draw(ctx);
 
   if (showStops) {
-    var stopsText = getStopsText(arrival);
+    var stopsText = getStopsText(arrival, nowMs);
     if (stopsText) {
-      var marquee = getStopsMarquee(state, stopsText, nowMs);
       Text.create("Stops")
-        .text(marquee.text)
+        .text(stopsText)
         .color(baseTextColor)
-        .pos(STOPS_REGION_X - marquee.offsetPx, rowY + ROW_H + 1)
+        .pos(STOPS_REGION_X, rowY + ROW_H + 1)
         .size(STOPS_REGION_W, ROW_H)
         .leftAlign()
         .scaleXY()
@@ -209,24 +205,47 @@ function getStatus(arrival, secsToDep) {
   return countdownMins + " min";
 }
 
-function getStopsMarquee(state, text, nowMs) {
-  var loop = text + " \u2022 ";
-  if (text.length === 0) return { text: "", offsetPx: 0 };
-  if (text.length <= 1) return { text: text, offsetPx: 0 };
+function getStopsPage(stops, nowMs) {
+  if (stops.length === 0) return "";
 
-  if (state.stopsScrollText !== text) {
-    state.stopsScrollText = text;
-    state.stopsScrollPx = 0;
-    state.stopsLastFrameMs = nowMs;
+  var maxChars = Math.max(1, Math.floor(STOPS_REGION_W / STOPS_CHAR_PX) - 1);
+  var pages = [];
+  var current = "";
+
+  function pushChunks(text) {
+    var start = 0;
+    while (start < text.length) {
+      pages.push(text.substring(start, start + maxChars));
+      start += maxChars;
+    }
   }
 
-  var deltaMs = state.stopsLastFrameMs > 0 ? Math.max(0, nowMs - state.stopsLastFrameMs) : 0;
-  state.stopsScrollPx += (deltaMs / 1000) * STOPS_SCROLL_PX_PER_SEC;
-  state.stopsLastFrameMs = nowMs;
+  for (var i = 0; i < stops.length; i++) {
+    var stop = stops[i];
+    var candidate = current ? current + " \u2022 " + stop : stop;
+    if (candidate.length <= maxChars) {
+      current = candidate;
+      continue;
+    }
 
-  var loopPx = loop.length * STOPS_CHAR_PX;
-  var repeated = loop + loop + loop;
-  return { text: repeated, offsetPx: loopPx > 0 ? state.stopsScrollPx % loopPx : 0 };
+    if (current) {
+      pages.push(current);
+      current = "";
+    }
+
+    if (stop.length <= maxChars) {
+      current = stop;
+    } else {
+      pushChunks(stop);
+    }
+  }
+
+  if (current) {
+    pages.push(current);
+  }
+
+  if (pages.length === 0) return "";
+  return pages[Math.floor(nowMs / STOPS_PAGE_MS) % pages.length];
 }
 
 function getTrainKey(arrival) {
