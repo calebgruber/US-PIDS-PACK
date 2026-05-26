@@ -207,7 +207,7 @@ function getStatus(arrival, secsToDep) {
 }
 
 function getStopsMarquee(text, nowMs) {
-  var loop = text + "   \u2022   ";
+  var loop = text + " \u2022 ";
   if (text.length === 0) return { text: "", subPx: 0 };
   if (text.length <= 1) return { text: text, subPx: 0 };
 
