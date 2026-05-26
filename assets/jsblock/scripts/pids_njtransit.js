@@ -1,7 +1,9 @@
 include(Resources.id("jsblock:scripts/pids_util.js"));
 
-const MAX_ROWS = 5;
-const ROW_HEIGHT = 10.4;
+const WIDTH = 186;
+const HEIGHT = 60;
+const MAX_ROWS = 2;
+const ROW_HEIGHT = 15;
 const START_Y = 24;
 const PID_ID = "PID-3-49";
 
@@ -12,7 +14,7 @@ function render(ctx, state, pids) {
   // --- Background ---
   Texture.create("Background")
     .texture("jsblock:textures/njt_bg.png")
-    .size(pids.width, pids.height)
+    .size(WIDTH, HEIGHT)
     .draw(ctx);
 
   // --- Clock ---
@@ -26,7 +28,7 @@ function render(ctx, state, pids) {
     .text(timeStr)
     .color(0xFFFFFF)
     .size(20, 6)
-    .pos(pids.width - 2, 2)
+    .pos(WIDTH - 2, 2)
     .scaleXY()
     .rightAlign()
     .scale(1.0)
@@ -37,7 +39,7 @@ function render(ctx, state, pids) {
     .text(PID_ID)
     .color(0xFFFFFF)
     .size(20, 6)
-    .pos(pids.width - 24, 2)
+    .pos(WIDTH - 24, 2)
     .scaleXY()
     .rightAlign()
     .scale(1.0)
@@ -78,7 +80,7 @@ function render(ctx, state, pids) {
     Texture.create("RowBG_" + rowIndex)
       .texture("jsblock:textures/njt_template.png")
       .pos(0, rowY)
-      .size(pids.width, ROW_HEIGHT)
+      .size(WIDTH, ROW_HEIGHT)
       .color(arrival.routeColor())
       .draw(ctx);
 
