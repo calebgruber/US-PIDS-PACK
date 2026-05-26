@@ -8,11 +8,11 @@ const TOP_ROW_Y = 20;
 const BOTTOM_ROW_Y = 45;
 const ROW_H = 12;
 const STOPS_Y = 30;
-const STOPS_REGION_X = BAR_X;            // left edge of full chevron
-const STOPS_REGION_W = CHEVRON_W;        // full chevron width
+const STOPS_REGION_X = BAR_X + 2;        // nudged slightly right
+const STOPS_REGION_W = CHEVRON_W - 2;    // keep inside chevron bounds
 const STOPS_SCALE = 0.82;
 const STOPS_CHAR_PX = 6.0 * STOPS_SCALE; // approx px-per-char at stops scale
-const STOPS_SCROLL_PX_PER_SEC = 12;
+const STOPS_SCROLL_PX_PER_SEC = 8;
 const ROW_SHIFT_ANIM_MS = 500;
 
 const WIDTH = 186;
@@ -213,16 +213,13 @@ function getStopsScroll(state, text, nowMs) {
   var cache = state.stopsScrollCache[text];
   if (!cache) {
     var loop = text + spacer;
-    var loopLen = loop.length;
-    var numChars = Math.ceil(STOPS_REGION_W / STOPS_CHAR_PX) + 3;
     var repeated = loop;
-    while (repeated.length < loopLen + numChars) {
+    var minChars = Math.ceil((STOPS_REGION_W + loop.length * STOPS_CHAR_PX) / STOPS_CHAR_PX) + loop.length;
+    while (repeated.length < minChars) {
       repeated += loop;
     }
     cache = {
-      loopLen: loopLen,
-      loopPx: loopLen * STOPS_CHAR_PX,
-      numChars: numChars,
+      loopPx: loop.length * STOPS_CHAR_PX,
       repeated: repeated
     };
     state.stopsScrollCache[text] = cache;
@@ -230,13 +227,11 @@ function getStopsScroll(state, text, nowMs) {
 
   var loopPx = cache.loopPx;
   var offsetPx = ((nowMs / 1000) * STOPS_SCROLL_PX_PER_SEC) % loopPx;
-  var charIdx = Math.floor(offsetPx / STOPS_CHAR_PX);
-  var pixelFract = offsetPx - charIdx * STOPS_CHAR_PX;
 
   return {
-    text: cache.repeated.slice(charIdx, charIdx + cache.numChars),
-    x: STOPS_REGION_X - pixelFract,
-    sizeW: STOPS_REGION_W + pixelFract
+    text: cache.repeated,
+    x: STOPS_REGION_X - offsetPx,
+    sizeW: STOPS_REGION_W
   };
 }
 
