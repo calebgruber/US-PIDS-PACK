@@ -184,10 +184,11 @@ function drawRow(ctx, state, pids, arrival, id, rowY, nowMs, barW, opacity, show
   if (showStops) {
     var stopsText = getStopsText(arrival);
     if (stopsText) {
+      var marquee = getStopsMarquee(stopsText, nowMs);
       Text.create("Stops")
-        .text(getStopsMarqueeText(stopsText, nowMs))
+        .text(marquee.text)
         .color(baseTextColor)
-        .pos(STOPS_REGION_X, rowY + ROW_H + 1)
+        .pos(STOPS_REGION_X - marquee.subPx, rowY + ROW_H + 1)
         .size(STOPS_REGION_W, ROW_H)
         .leftAlign()
         .scaleXY()
@@ -205,20 +206,23 @@ function getStatus(arrival, secsToDep) {
   return countdownMins + " min";
 }
 
-function getStopsMarqueeText(text, nowMs) {
+function getStopsMarquee(text, nowMs) {
   var loop = text + "   \u2022   ";
-  if (text.length === 0) return "";
-  if (text.length <= 1) return text;
+  if (text.length === 0) return { text: "", subPx: 0 };
+  if (text.length <= 1) return { text: text, subPx: 0 };
 
-  var visibleChars = Math.max(1, Math.ceil(STOPS_REGION_W / STOPS_CHAR_PX) + 1);
-  var charOffset = Math.floor(((nowMs / 1000) * STOPS_SCROLL_PX_PER_SEC) / STOPS_CHAR_PX);
+  var totalPx = (nowMs / 1000) * STOPS_SCROLL_PX_PER_SEC;
+  var charOffset = Math.floor(totalPx / STOPS_CHAR_PX);
+  var subPx = totalPx % STOPS_CHAR_PX;
+
+  var visibleChars = Math.max(1, Math.ceil(STOPS_REGION_W / STOPS_CHAR_PX) + 2);
   var start = charOffset % loop.length;
 
   var repeated = loop;
   while (repeated.length < start + visibleChars) {
     repeated += loop;
   }
-  return repeated.substring(start, start + visibleChars);
+  return { text: repeated.substring(start, start + visibleChars), subPx: subPx };
 }
 
 function getTrainKey(arrival) {
